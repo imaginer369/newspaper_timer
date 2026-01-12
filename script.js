@@ -1,5 +1,5 @@
 /**
- * Lap-Based Alarm Stopwatch
+ * Lap-Based Alarm Stopwatch on github
  * 
  * Core Features:
  * - Stopwatch with start, pause, resume, and reset
