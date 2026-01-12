@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lap-Based Alarm Stopwatch</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Lap-Based Alarm Stopwatch</h1>
+            <p class="subtitle">Track time with per-lap alarms</p>
+        </header>
+
+        <main>
+            <!-- Stopwatch Display Section -->
+            <section class="stopwatch-section">
+                <div class="time-display">
+                    <span id="stopwatch-time">00:00:00</span>
+                    <span class="time-unit">HH:MM:SS</span>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="controls">
+                    <button id="start-pause-btn" class="btn btn-primary">Start</button>
+                    <button id="lap-btn" class="btn btn-secondary" disabled>Lap</button>
+                    <button id="reset-btn" class="btn btn-danger" disabled>Reset</button>
+                </div>
+
+                <div class="keyboard-hints">
+                    <small>
+                        <strong>Keyboard shortcuts:</strong>
+                        Space = Start/Pause | L = Lap | R = Reset
+                    </small>
+                </div>
+            </section>
+
+            <!-- Laps Section -->
+            <section class="laps-section">
+                <h2>Laps</h2>
+                <div id="laps-container" class="laps-container">
+                    <p class="empty-state">No laps yet. Press Start and then Lap to begin.</p>
+                </div>
+            </section>
+
+            <!-- Default Laps Info -->
+            <section class="info-section">
+                <h3>Default Alarm Durations</h3>
+                <ul class="default-alarms">
+                    <li><strong>Lap 1:</strong> 5 minutes</li>
+                    <li><strong>Lap 2:</strong> 3 minutes</li>
+                    <li><strong>Lap 3:</strong> 3 minutes</li>
+                    <li><strong>Lap 4:</strong> 5 minutes</li>
+                    <li><strong>Lap 5:</strong> 5 minutes</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>Built with vanilla HTML, CSS, and JavaScript</p>
+        </footer>
+    </div>
+
+    <!-- Hidden audio element for alarm sound -->
+    <audio id="alarm-sound" preload="auto">
+        <!-- Fallback sound will be generated via Web Audio API -->
+    </audio>
+
+    <script src="script.js"></script>
+</body>
+</html>

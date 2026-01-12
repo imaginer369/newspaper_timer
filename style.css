@@ -1,0 +1,507 @@
+/* ============================================
+   Global Styles & Reset
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: #333;
+}
+
+/* ============================================
+   Container & Layout
+   ============================================ */
+
+.container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+main {
+    padding: 30px 20px;
+    flex: 1;
+}
+
+footer {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+    border-top: 1px solid #eee;
+}
+
+/* ============================================
+   Stopwatch Display
+   ============================================ */
+
+.stopwatch-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.time-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+#stopwatch-time {
+    font-size: 64px;
+    font-weight: 300;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+    color: #667eea;
+    line-height: 1.2;
+}
+
+.time-unit {
+    font-size: 12px;
+    color: #999;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ============================================
+   Control Buttons
+   ============================================ */
+
+.controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+    border: 2px solid #e0e0e0;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #e8e8e8;
+    border-color: #d0d0d0;
+}
+
+.btn-danger {
+    background: #ff6b6b;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #ee5a52;
+}
+
+.keyboard-hints {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.keyboard-hints small {
+    color: #999;
+    display: inline-block;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+/* ============================================
+   Laps Section
+   ============================================ */
+
+.laps-section {
+    margin-bottom: 40px;
+}
+
+.laps-section h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.laps-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-style: italic;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+/* Lap Item */
+.lap-item {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.lap-item:hover {
+    background: #f0f2f8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.lap-item.alarm-triggered {
+    border-left-color: #ff6b6b;
+    background: #fff5f5;
+}
+
+.lap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.lap-number {
+    font-size: 18px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.lap-status {
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: white;
+}
+
+.status-pending {
+    color: #ffc107;
+    background: #fff8e1;
+}
+
+.status-triggered {
+    color: #ff6b6b;
+    background: #ffe1e1;
+}
+
+.lap-times {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.time-label {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 8px;
+}
+
+.time-value {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Alarm Duration Edit Section */
+.alarm-edit {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.alarm-edit label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.alarm-input {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.alarm-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.alarm-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-mini {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.btn-mini-save {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-mini-save:hover {
+    background: #45a049;
+}
+
+.btn-mini-cancel {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-mini-cancel:hover {
+    background: #d0d0d0;
+}
+
+.btn-edit {
+    background: #2196f3;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.btn-edit:hover {
+    background: #0b7dda;
+}
+
+.btn-toggle-alarm {
+    background: #999;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.btn-toggle-alarm.enabled {
+    background: #4caf50;
+}
+
+.btn-toggle-alarm:hover {
+    opacity: 0.9;
+}
+
+/* ============================================
+   Info Section
+   ============================================ */
+
+.info-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.info-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.default-alarms {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.default-alarms li {
+    font-size: 14px;
+    padding: 8px 0;
+    color: #666;
+}
+
+.default-alarms strong {
+    color: #333;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 600px) {
+    header {
+        padding: 20px 15px;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    main {
+        padding: 20px 15px;
+    }
+
+    #stopwatch-time {
+        font-size: 48px;
+    }
+
+    .controls {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .lap-times {
+        grid-template-columns: 1fr;
+    }
+
+    .alarm-edit {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .alarm-buttons {
+        width: 100%;
+    }
+
+    .btn-mini {
+        flex: 1;
+    }
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+.btn:focus,
+.alarm-input:focus,
+.btn-mini:focus,
+.btn-edit:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.alarm-triggered .lap-status {
+    animation: pulse 1s infinite;
+}
