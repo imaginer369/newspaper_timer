@@ -181,6 +181,42 @@ footer {
 }
 
 /* ============================================
+   Current Lap Display Section
+   ============================================ */
+
+.current-lap-section {
+    background: #f0f2f8;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    border-left: 4px solid #667eea;
+}
+
+.current-lap-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.current-lap-label {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+#current-lap-time {
+    font-size: 48px;
+    font-weight: 300;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+    color: #667eea;
+}
+
+/* ============================================
    Laps Section
    ============================================ */
 

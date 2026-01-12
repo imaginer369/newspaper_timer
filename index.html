@@ -36,6 +36,14 @@
                 </div>
             </section>
 
+            <!-- Current Lap Stopwatch Section -->
+            <section class="current-lap-section">
+                <div class="current-lap-display">
+                    <span class="current-lap-label">Current Lap</span>
+                    <span id="current-lap-time">00:00:00</span>
+                </div>
+            </section>
+
             <!-- Laps Section -->
             <section class="laps-section">
                 <h2>Laps</h2>
@@ -63,9 +71,7 @@
     </div>
 
     <!-- Hidden audio element for alarm sound -->
-    <audio id="alarm-sound" preload="auto">
-        <!-- Fallback sound will be generated via Web Audio API -->
-    </audio>
+    <audio id="alarm-sound" preload="auto" src="alarm_sound.mp3"></audio>
 
     <script src="script.js"></script>
 </body>

@@ -45,6 +45,7 @@ const elements = {
     lapBtn: document.getElementById('lap-btn'),
     resetBtn: document.getElementById('reset-btn'),
     lapsContainer: document.getElementById('laps-container'),
+    currentLapTime: document.getElementById('current-lap-time'),
     alarmSound: document.getElementById('alarm-sound')
 };
 
@@ -73,46 +74,32 @@ function formatTime(milliseconds) {
 // ============================================
 
 /**
- * Generate and play a simple alarm sound using Web Audio API
- * Fallback: uses oscillator to create a beeping tone
+ * Play the alarm sound from alarm_sound.mp3 file
+ * Resets and plays the audio file from the beginning
  */
 function playAlarmSound() {
     try {
-        // Attempt to use Web Audio API for a clean beep sound
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        // Configure beep: frequency = 800Hz, duration = 500ms
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-
-        // Play a second beep after 600ms for better user feedback
-        setTimeout(() => {
-            const osc2 = audioContext.createOscillator();
-            const gain2 = audioContext.createGain();
-            osc2.connect(gain2);
-            gain2.connect(audioContext.destination);
-
-            osc2.frequency.value = 800;
-            osc2.type = 'sine';
-            gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-            osc2.start(audioContext.currentTime);
-            osc2.stop(audioContext.currentTime + 0.5);
-        }, 600);
+        const audio = elements.alarmSound;
+        // Reset to beginning and play
+        audio.currentTime = 0;
+        audio.play().catch(error => {
+            console.warn('Failed to play alarm sound:', error);
+        });
     } catch (error) {
-        console.warn('Web Audio API not available, using fallback:', error);
+        console.warn('Error playing alarm sound:', error);
+    }
+}
+
+/**
+ * Stop the currently playing alarm sound
+ */
+function stopAlarmSound() {
+    try {
+        const audio = elements.alarmSound;
+        audio.pause();
+        audio.currentTime = 0;
+    } catch (error) {
+        console.warn('Error stopping alarm sound:', error);
     }
 }
 
@@ -129,6 +116,11 @@ function startStopwatch() {
     state.isRunning = true;
     state.startTime = Date.now() - state.pausedTime;
 
+    // Automatically create the first lap when stopwatch starts (only if no laps exist)
+    if (state.laps.length === 0) {
+        createLap();
+    }
+
     // Update UI
     elements.startPauseBtn.textContent = 'Pause';
     elements.lapBtn.disabled = false;
@@ -138,6 +130,7 @@ function startStopwatch() {
     // Use requestAnimationFrame for smooth updates at ~60fps
     state.intervalId = setInterval(() => {
         updateStopwatchDisplay();
+        updateCurrentLapDisplay();
         checkLapAlarms();
     }, 100); // Update every 100ms for smooth display without excessive CPU usage
 }
@@ -186,6 +179,23 @@ function updateStopwatchDisplay() {
     elements.stopwatchTime.textContent = formatTime(state.elapsedTime);
 }
 
+/**
+ * Update the current lap display
+ * Shows elapsed time of the most recently created lap
+ */
+function updateCurrentLapDisplay() {
+    if (state.laps.length === 0) {
+        // No laps yet, show 00:00:00
+        elements.currentLapTime.textContent = '00:00:00';
+        return;
+    }
+
+    // Get the current (last created) lap
+    const currentLapIndex = state.laps.length - 1;
+    const currentLapElapsedTime = getLapElapsedTime(currentLapIndex);
+    elements.currentLapTime.textContent = formatTime(currentLapElapsedTime);
+}
+
 // ============================================
 // Lap Management
 // ============================================
@@ -199,6 +209,9 @@ function createLap() {
         console.warn('Start the stopwatch before creating laps');
         return;
     }
+
+    // Stop any currently playing alarm when a new lap is recorded
+    stopAlarmSound();
 
     const lapIndex = state.laps.length;
     const defaultDuration = state.defaultAlarmDurations[lapIndex] || 5 * 60 * 1000;
@@ -333,7 +346,6 @@ function createLapElement(lap, index) {
     const statusClass = isTriggered ? 'status-triggered' : 'status-pending';
     const statusText = isTriggered ? 'Triggered' : 'Pending';
     const itemClass = isTriggered ? 'lap-item alarm-triggered' : 'lap-item';
-    const alarmButtonClass = lap.enabled ? 'btn-toggle-alarm enabled' : 'btn-toggle-alarm';
 
     return `
         <div class="${itemClass}" data-lap-index="${index}">
@@ -350,23 +362,6 @@ function createLapElement(lap, index) {
                 <div class="time-info">
                     <span class="time-label">Alarm At</span>
                     <span class="time-value">${alarmDurationFormatted}</span>
-                </div>
-            </div>
-
-            <div class="alarm-edit">
-                <label>Alarm Duration:</label>
-                <input 
-                    type="text" 
-                    class="alarm-input" 
-                    data-lap-index="${index}"
-                    value="${alarmDurationFormatted}"
-                    placeholder="MM:SS"
-                >
-                <div class="alarm-buttons">
-                    <button class="btn-mini btn-mini-save" data-lap-index="${index}" title="Save alarm duration">Save</button>
-                    <button class="${alarmButtonClass}" data-lap-index="${index}" title="Toggle alarm on/off">
-                        ${lap.enabled ? 'Disable' : 'Enable'}
-                    </button>
                 </div>
             </div>
         </div>
@@ -417,48 +412,7 @@ function updateLapUI(lapIndex) {
  * Must be called after rendering to attach handlers
  */
 function attachLapEventListeners() {
-    // Save alarm duration handlers
-    document.querySelectorAll('.btn-mini-save').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const lapIndex = parseInt(e.target.dataset.lapIndex);
-            const input = document.querySelector(
-                `.alarm-input[data-lap-index="${lapIndex}"]`
-            );
-            const timeString = input.value.trim();
-            const durationMs = parseTimeString(timeString);
-
-            if (durationMs !== null) {
-                updateLapAlarmDuration(lapIndex, durationMs);
-            } else {
-                alert('Invalid format. Use MM:SS (e.g., 05:30)');
-            }
-        });
-    });
-
-    // Toggle alarm handlers
-    document.querySelectorAll('.btn-toggle-alarm').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const lapIndex = parseInt(e.target.dataset.lapIndex);
-            toggleLapAlarm(lapIndex);
-        });
-    });
-
-    // Allow Enter key to save alarm duration
-    document.querySelectorAll('.alarm-input').forEach(input => {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const lapIndex = parseInt(e.target.dataset.lapIndex);
-                const timeString = e.target.value.trim();
-                const durationMs = parseTimeString(timeString);
-
-                if (durationMs !== null) {
-                    updateLapAlarmDuration(lapIndex, durationMs);
-                } else {
-                    alert('Invalid format. Use MM:SS (e.g., 05:30)');
-                }
-            }
-        });
-    });
+    // Event listeners removed - alarm duration and disable controls are no longer displayed
 }
 
 /**
