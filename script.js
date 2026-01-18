@@ -28,9 +28,9 @@ const state = {
     laps: [],                  // Array of lap objects
     intervalId: null,          // Reference to setInterval for animation
     defaultAlarmDurations: [    // Default alarm durations in milliseconds
-        1 * 60 * 1000,         // Lap 1: 5 minutes
-        1 * 60 * 1000,         // Lap 2: 3 minutes
-        1 * 60 * 1000,         // Lap 3: 3 minutes
+        5 * 60 * 1000,         // Lap 1: 5 minutes
+        3 * 60 * 1000,         // Lap 2: 3 minutes
+        3 * 60 * 1000,         // Lap 3: 3 minutes
         5 * 60 * 1000,         // Lap 4: 5 minutes
         5 * 60 * 1000          // Lap 5: 5 minutes
     ]
