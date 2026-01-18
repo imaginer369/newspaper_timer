@@ -7,46 +7,49 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Lap-Based Alarm Stopwatch</h1>
-            <p class="subtitle">Track time with per-lap alarms</p>
-        </header>
-
-        <main>
-            <!-- Stopwatch Display Section -->
-            <section class="stopwatch-section">
-                <div class="time-display">
+    <div class="app-layout">
+        <!-- Left Sidebar: Timer Display -->
+        <aside class="timer-sidebar">
+            <div class="timer-display-section">
+                <div class="main-timer">
                     <span id="stopwatch-time">00:00:00</span>
-                    <span class="time-unit">HH:MM:SS</span>
                 </div>
-
-                <!-- Control Buttons -->
-                <div class="controls">
-                    <button id="start-pause-btn" class="btn btn-primary">Start</button>
-                    <button id="lap-btn" class="btn btn-secondary" disabled>Lap</button>
-                    <button id="reset-btn" class="btn btn-danger" disabled>Reset</button>
-                </div>
-
-                <div class="keyboard-hints">
-                    <small>
-                        <strong>Keyboard shortcuts:</strong>
-                        Space = Start/Pause | L = Lap | R = Reset
-                    </small>
-                </div>
-            </section>
-
-            <!-- Current Lap Stopwatch Section -->
-            <section class="current-lap-section">
-                <div class="current-lap-display">
-                    <span class="current-lap-label">Current Lap</span>
+                
+                <div class="current-lap-info">
+                    <span class="lap-label">Current Lap</span>
                     <span id="current-lap-time">00:00:00</span>
                 </div>
-            </section>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="controls">
+                <button id="start-pause-btn" class="btn btn-primary">Start</button>
+                <button id="lap-btn" class="btn btn-secondary" disabled>Lap</button>
+                <button id="reset-btn" class="btn btn-danger" disabled>Reset</button>
+            </div>
+
+            <!-- App Title -->
+            <div class="app-title">
+                <p>Newspaper Alarm<br>Based Timer</p>
+            </div>
+
+            <div class="keyboard-hints">
+                <small>
+                    <strong>Shortcuts:</strong><br>
+                    Space = Start/Pause<br>
+                    L = Lap | R = Reset
+                </small>
+            </div>
+        </aside>
+
+        <!-- Main Content: Laps Records -->
+        <main class="content-area">
+            <header>
+                <h1>Lap Records</h1>
+            </header>
 
             <!-- Laps Section -->
             <section class="laps-section">
-                <h2>Laps</h2>
                 <div id="laps-container" class="laps-container">
                     <p class="empty-state">No laps yet. Press Start and then Lap to begin.</p>
                 </div>
@@ -64,10 +67,6 @@
                 </ul>
             </section>
         </main>
-
-        <footer>
-            <p>Built with vanilla HTML, CSS, and JavaScript</p>
-        </footer>
     </div>
 
     <!-- Hidden audio element for alarm sound -->
