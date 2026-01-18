@@ -24,12 +24,13 @@ const state = {
     elapsedTime: 0,            // Total elapsed milliseconds
     startTime: null,           // Timestamp when stopwatch started
     pausedTime: 0,             // Accumulated time before current run
+    currentLapStartTime: null, // Timestamp when current lap timer started
     laps: [],                  // Array of lap objects
     intervalId: null,          // Reference to setInterval for animation
     defaultAlarmDurations: [    // Default alarm durations in milliseconds
-        5 * 60 * 1000,         // Lap 1: 5 minutes
-        3 * 60 * 1000,         // Lap 2: 3 minutes
-        3 * 60 * 1000,         // Lap 3: 3 minutes
+        1 * 60 * 1000,         // Lap 1: 5 minutes
+        1 * 60 * 1000,         // Lap 2: 3 minutes
+        1 * 60 * 1000,         // Lap 3: 3 minutes
         5 * 60 * 1000,         // Lap 4: 5 minutes
         5 * 60 * 1000          // Lap 5: 5 minutes
     ]
@@ -48,6 +49,74 @@ const elements = {
     currentLapTime: document.getElementById('current-lap-time'),
     alarmSound: document.getElementById('alarm-sound')
 };
+
+// ============================================
+// Utility: Local Storage (Record Laps)
+// ============================================
+
+/**
+ * Save lap data to local storage
+ * Persists all recorded laps so they can be retrieved later
+ */
+function saveLapsToStorage() {
+    try {
+        const lapsData = state.laps.map(lap => ({
+            createdAt: lap.createdAt,
+            recordedTime: lap.recordedTime,
+            alarmDuration: lap.alarmDuration,
+            triggered: lap.triggered,
+            enabled: lap.enabled
+        }));
+        localStorage.setItem('lapsHistory', JSON.stringify(lapsData));
+        console.log('Laps saved to local storage');
+    } catch (error) {
+        console.warn('Error saving laps to storage:', error);
+    }
+}
+
+/**
+ * Load lap data from local storage
+ * @returns {array} Array of saved lap objects, or empty array if none exist
+ */
+function loadLapsFromStorage() {
+    try {
+        const stored = localStorage.getItem('lapsHistory');
+        if (stored) {
+            return JSON.parse(stored);
+        }
+    } catch (error) {
+        console.warn('Error loading laps from storage:', error);
+    }
+    return [];
+}
+
+/**
+ * Clear all recorded lap history from local storage
+ */
+function clearLapsHistory() {
+    try {
+        localStorage.removeItem('lapsHistory');
+        console.log('Lap history cleared');
+    } catch (error) {
+        console.warn('Error clearing laps history:', error);
+    }
+}
+
+/**
+ * Export recorded laps as JSON
+ * @returns {string} JSON string of all recorded laps
+ */
+function exportLapsAsJSON() {
+    const lapsData = state.laps.map((lap, index) => ({
+        lapNumber: index + 1,
+        createdAt: new Date(lap.createdAt).toISOString(),
+        recordedTime: formatTime(lap.recordedTime),
+        alarmDuration: formatTime(lap.alarmDuration),
+        triggered: lap.triggered,
+        enabled: lap.enabled
+    }));
+    return JSON.stringify(lapsData, null, 2);
+}
 
 // ============================================
 // Utility: Time Formatting
@@ -115,10 +184,24 @@ function startStopwatch() {
 
     state.isRunning = true;
     state.startTime = Date.now() - state.pausedTime;
+    
+    // Initialize current lap timer on first start
+    if (state.currentLapStartTime === null) {
+        state.currentLapStartTime = state.startTime;
+    }
 
-    // Automatically create the first lap when stopwatch starts (only if no laps exist)
+    // Create the first lap box when stopwatch starts (only if no laps exist)
     if (state.laps.length === 0) {
-        createLap();
+        const lap = {
+            createdAt: Date.now(),
+            recordedTime: 0,
+            alarmDuration: state.defaultAlarmDurations[0] || 5 * 60 * 1000,
+            triggered: false,
+            enabled: true,
+            isRecorded: false  // Mark this as pending, not yet recorded
+        };
+        state.laps.push(lap);
+        renderLaps();
     }
 
     // Update UI
@@ -137,6 +220,7 @@ function startStopwatch() {
 
 /**
  * Pause the stopwatch (can be resumed)
+ * Also pauses the current lap timer (both display and backend)
  */
 function pauseStopwatch() {
     if (!state.isRunning) return;
@@ -156,12 +240,15 @@ function resetStopwatch() {
     state.elapsedTime = 0;
     state.pausedTime = 0;
     state.startTime = null;
+    state.currentLapStartTime = null;
     state.laps = [];
 
     clearInterval(state.intervalId);
+    clearLapsHistory();
 
     // Update UI
     elements.stopwatchTime.textContent = '00:00:00';
+    elements.currentLapTime.textContent = '00:00:00';
     elements.startPauseBtn.textContent = 'Start';
     elements.lapBtn.disabled = true;
     elements.resetBtn.disabled = true;
@@ -181,19 +268,24 @@ function updateStopwatchDisplay() {
 
 /**
  * Update the current lap display
- * Shows elapsed time of the most recently created lap
+ * Shows elapsed time of the current active lap (not yet recorded)
  */
 function updateCurrentLapDisplay() {
-    if (state.laps.length === 0) {
-        // No laps yet, show 00:00:00
+    if (state.currentLapStartTime === null) {
+        // No lap has started yet, show 00:00:00
         elements.currentLapTime.textContent = '00:00:00';
         return;
     }
 
-    // Get the current (last created) lap
-    const currentLapIndex = state.laps.length - 1;
-    const currentLapElapsedTime = getLapElapsedTime(currentLapIndex);
-    elements.currentLapTime.textContent = formatTime(currentLapElapsedTime);
+    // Calculate current lap elapsed time from when it started
+    let currentLapElapsedTime;
+    if (state.isRunning) {
+        currentLapElapsedTime = Date.now() - state.currentLapStartTime;
+    } else {
+        currentLapElapsedTime = state.pausedTime - (state.currentLapStartTime - state.startTime);
+    }
+    
+    elements.currentLapTime.textContent = formatTime(Math.max(0, currentLapElapsedTime));
 }
 
 // ============================================
@@ -203,6 +295,13 @@ function updateCurrentLapDisplay() {
 /**
  * Create a new lap with current stopwatch time
  * Each lap stores its creation time and alarm configuration
+ * 
+ * When a new lap is recorded:
+ * - Record the elapsed time from the current active lap
+ * - Stop the currently playing alarm sound
+ * - Disable the alarm for the previously recorded lap
+ * - Reset its triggered state
+ * - Start a new current lap timer
  */
 function createLap() {
     if (!state.isRunning && state.laps.length === 0) {
@@ -210,31 +309,71 @@ function createLap() {
         return;
     }
 
+    // Get the elapsed time from the current lap BEFORE creating a new one
+    let recordedTime = 0;
+    if (state.currentLapStartTime !== null) {
+        if (state.isRunning) {
+            recordedTime = Date.now() - state.currentLapStartTime;
+        } else {
+            recordedTime = state.pausedTime - (state.currentLapStartTime - state.startTime);
+        }
+    }
+
     // Stop any currently playing alarm when a new lap is recorded
     stopAlarmSound();
+
+    if (state.laps.length > 0) {
+        const currentLapIndex = state.laps.length - 1;
+        const currentLap = state.laps[currentLapIndex];
+        
+        // If this is the first lap (pending), just record it
+        if (!currentLap.isRecorded) {
+            currentLap.recordedTime = Math.max(0, recordedTime);
+            currentLap.isRecorded = true;
+            currentLap.enabled = false;
+            currentLap.triggered = false;
+        } else {
+            // For subsequent laps, disable the current one
+            currentLap.enabled = false;
+            currentLap.triggered = false;
+        }
+        updateLapUI(currentLapIndex);
+    }
 
     const lapIndex = state.laps.length;
     const defaultDuration = state.defaultAlarmDurations[lapIndex] || 5 * 60 * 1000;
 
     // Lap object structure:
     // - createdAt: when the lap was created (timestamp)
+    // - recordedTime: the final elapsed time when this lap was recorded (frozen)
     // - alarmDuration: configured alarm duration in milliseconds
     // - triggered: flag to prevent alarm from retriggering
     // - enabled: whether the alarm is active
+    // - isRecorded: whether this lap has been finalized
     const lap = {
         createdAt: Date.now(),
+        recordedTime: 0,
         alarmDuration: defaultDuration,
         triggered: false,
-        enabled: true
+        enabled: true,
+        isRecorded: false
     };
 
     state.laps.push(lap);
+    
+    // Reset current lap timer for the next lap
+    state.currentLapStartTime = state.isRunning ? Date.now() : state.startTime + state.pausedTime;
+    
     renderLaps();
+    
+    // Save the recorded lap to local storage
+    saveLapsToStorage();
 }
 
 /**
  * Get the elapsed time for a specific lap
- * Measured from the moment the lap was created
+ * Uses the main stopwatch's pausedTime as reference to prevent jump on resume
+ * Lap elapsed time = main stopwatch time - when the lap was created
  * 
  * @param {number} lapIndex - Index of the lap
  * @returns {number} Elapsed time in milliseconds
@@ -243,40 +382,51 @@ function getLapElapsedTime(lapIndex) {
     if (lapIndex >= state.laps.length) return 0;
 
     const lap = state.laps[lapIndex];
-    const now = state.isRunning ? Date.now() : Date.now() - (state.pausedTime - (Date.now() - state.startTime));
     
-    // If stopwatch is paused, use the paused elapsed time as reference
-    const currentTime = state.isRunning ? Date.now() : state.startTime + state.pausedTime;
-    return Math.max(0, currentTime - lap.createdAt);
+    // Get main stopwatch's current elapsed time
+    let mainElapsedTime;
+    if (state.isRunning) {
+        mainElapsedTime = Date.now() - state.startTime;
+    } else {
+        mainElapsedTime = state.pausedTime;
+    }
+    
+    // Lap elapsed time = main elapsed time - time when this lap was created
+    return Math.max(0, mainElapsedTime - (lap.createdAt - state.startTime));
 }
 
 /**
  * Check all lap alarms and trigger if conditions are met
  * 
  * Alarm triggering logic:
- * 1. Check if lap alarm is enabled
- * 2. Check if lap elapsed time >= configured alarm duration
- * 3. Check if alarm hasn't been triggered yet (prevent retriggering)
- * 4. Mark alarm as triggered and play sound
+ * 1. Only check the current lap (most recently created lap)
+ * 2. Check if lap alarm is enabled
+ * 3. Check if lap elapsed time >= configured alarm duration
+ * 4. Check if alarm hasn't been triggered yet (prevent retriggering)
+ * 5. Mark alarm as triggered and play sound
  * 
  * Alarms only trigger once per lap and reset when:
  * - The stopwatch is reset
  * - A new lap is created
  */
 function checkLapAlarms() {
-    state.laps.forEach((lap, index) => {
-        // Skip if alarm is disabled or already triggered
-        if (!lap.enabled || lap.triggered) return;
+    // Only check the current lap (the most recently created one)
+    if (state.laps.length === 0) return;
 
-        const lapElapsedTime = getLapElapsedTime(index);
+    const currentLapIndex = state.laps.length - 1;
+    const currentLap = state.laps[currentLapIndex];
 
-        // Trigger alarm if elapsed time reaches or exceeds alarm duration
-        if (lapElapsedTime >= lap.alarmDuration) {
-            lap.triggered = true;
-            playAlarmSound();
-            updateLapUI(index);
-        }
-    });
+    // Skip if alarm is disabled or already triggered
+    if (!currentLap.enabled || currentLap.triggered) return;
+
+    const lapElapsedTime = getLapElapsedTime(currentLapIndex);
+
+    // Trigger alarm if elapsed time reaches or exceeds alarm duration
+    if (lapElapsedTime >= currentLap.alarmDuration) {
+        currentLap.triggered = true;
+        playAlarmSound();
+        updateLapUI(currentLapIndex);
+    }
 }
 
 // ============================================
@@ -339,13 +489,25 @@ function renderLaps() {
  */
 function createLapElement(lap, index) {
     const lapNumber = index + 1;
-    const elapsedTime = getLapElapsedTime(index);
     const alarmDurationFormatted = formatTime(lap.alarmDuration);
-    const elapsedTimeFormatted = formatTime(elapsedTime);
+    const recordedTimeFormatted = formatTime(lap.recordedTime);
     const isTriggered = lap.triggered;
-    const statusClass = isTriggered ? 'status-triggered' : 'status-pending';
-    const statusText = isTriggered ? 'Triggered' : 'Pending';
-    const itemClass = isTriggered ? 'lap-item alarm-triggered' : 'lap-item';
+    const isRecorded = lap.isRecorded;
+    
+    // Status: "Done" if recorded, "Triggered" if alarm triggered, "Pending" otherwise
+    let statusClass, statusText;
+    if (isRecorded) {
+        statusClass = 'status-done';
+        statusText = 'Done';
+    } else if (isTriggered) {
+        statusClass = 'status-triggered';
+        statusText = 'Triggered';
+    } else {
+        statusClass = 'status-pending';
+        statusText = 'Pending';
+    }
+    
+    const itemClass = isRecorded ? 'lap-item lap-done' : isTriggered ? 'lap-item alarm-triggered' : 'lap-item';
 
     return `
         <div class="${itemClass}" data-lap-index="${index}">
@@ -356,8 +518,8 @@ function createLapElement(lap, index) {
             
             <div class="lap-times">
                 <div class="time-info">
-                    <span class="time-label">Elapsed</span>
-                    <span class="time-value">${elapsedTimeFormatted}</span>
+                    <span class="time-label">Lap Time</span>
+                    <span class="time-value">${recordedTimeFormatted}</span>
                 </div>
                 <div class="time-info">
                     <span class="time-label">Alarm At</span>
@@ -385,6 +547,7 @@ function updateLapUI(lapIndex) {
     const alarmDurationFormatted = formatTime(lap.alarmDuration);
     const elapsedTimeFormatted = formatTime(elapsedTime);
     const isTriggered = lap.triggered;
+    const isRecorded = lap.isRecorded;
 
     // Update elapsed time
     const elapsedElement = lapElement.querySelector('.lap-times .time-value');
@@ -392,18 +555,31 @@ function updateLapUI(lapIndex) {
         elapsedElement.textContent = elapsedTimeFormatted;
     }
 
-    // Update status
+    // Update status based on lap state
     const statusElement = lapElement.querySelector('.lap-status');
     if (statusElement) {
-        statusElement.textContent = isTriggered ? 'Triggered' : 'Pending';
-        statusElement.className = `lap-status ${isTriggered ? 'status-triggered' : 'status-pending'}`;
+        if (isRecorded) {
+            statusElement.textContent = 'Done';
+            statusElement.className = 'lap-status status-done';
+        } else if (isTriggered) {
+            statusElement.textContent = 'Triggered';
+            statusElement.className = 'lap-status status-triggered';
+        } else {
+            statusElement.textContent = 'Pending';
+            statusElement.className = 'lap-status status-pending';
+        }
     }
 
     // Update item class
-    if (isTriggered) {
+    if (isRecorded) {
+        lapElement.classList.add('lap-done');
+        lapElement.classList.remove('alarm-triggered');
+    } else if (isTriggered) {
         lapElement.classList.add('alarm-triggered');
+        lapElement.classList.remove('lap-done');
     } else {
         lapElement.classList.remove('alarm-triggered');
+        lapElement.classList.remove('lap-done');
     }
 }
 
