@@ -642,12 +642,17 @@ elements.resetBtn.addEventListener('click', () => {
 /**
  * Keyboard shortcuts:
  * - Space: Start/Pause
- * - L: Create Lap
- * - R: Reset
+ * - L: Create Lap (only without Ctrl/Cmd)
+ * - R: Reset (only without Ctrl/Cmd)
  */
 document.addEventListener('keydown', (e) => {
     // Ignore if user is typing in an input field
     if (e.target.tagName === 'INPUT') {
+        return;
+    }
+
+    // Don't handle if Ctrl, Cmd, or Alt is pressed (allow browser shortcuts)
+    if (e.ctrlKey || e.metaKey || e.altKey) {
         return;
     }
 
